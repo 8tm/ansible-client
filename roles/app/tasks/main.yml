@@ -1,0 +1,26 @@
+---
+- name: Install application dependencies
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - nginx
+    - python3-pip
+    - git
+
+- name: Clone the application repository
+  git:
+    repo: 'https://github.com/8tm/ansible-client.git'
+    dest: /opt/ansible-client
+
+- name: Configure Nginx for the application
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/sites-available/default
+  notify: Restart Nginx
+
+- name: Ensure Nginx is running
+  service:
+    name: nginx
+    state: started
+    enabled: yes
