@@ -32,11 +32,17 @@
     force: yes
     update: yes
 
+- name: Sprawdź, czy istnieje plik requirements.txt
+  ansible.builtin.stat:
+    path: "{{ app_dest }}/requirements.txt"
+  register: requirements_file
+
 - name: Install Python requirements into venv
   ansible.builtin.pip:
     requirements: "{{ app_dest }}/requirements.txt"
     virtualenv: "{{ app_venv_path }}"
     virtualenv_python: python3
+  when: requirements_file.stat.exists
 
 - name: Render Nginx site configuration
   ansible.builtin.template:
