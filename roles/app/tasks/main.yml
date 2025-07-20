@@ -26,3 +26,45 @@
     name: nginx
     state: started
     enabled: yes
+
+# Instalacja i3WM:
+- name: Instalacja i3wm i narzędzi
+  ansible.builtin.apt:
+    name:
+      - i3
+      - i3status
+      - dmenu
+      - i3lock
+      - feh
+    state: present
+    update_cache: no
+  tags: i3
+
+- name: Utwórz katalog konfiguracji i3
+  ansible.builtin.file:
+    path: "{{ lookup('env','HOME') }}/.config/i3"
+    state: directory
+    mode: '0755'
+    owner: "{{ lookup('env','USER') }}"
+    group: "{{ lookup('env','USER') }}"
+  # overrides playbookowe become: true, aby działać jako normalny użytkownik
+  become: false
+  tags: i3
+
+- name: Sklonuj i3-config z GitHub
+  ansible.builtin.git:
+    repo: "{{ i3wm_config_repo }}"
+    dest: "{{ lookup('env','HOME') }}/.config/i3"
+    version: "{{ i3wm_config_version }}"
+    force: yes
+    update: yes
+  become: false
+  tags: i3
+
+- name: (opcjonalnie) Symlink do pliku config w ~/.i3
+  ansible.builtin.file:
+    src: "{{ lookup('env','HOME') }}/.config/i3/config"
+    dest: "{{ lookup('env','HOME') }}/.i3/config"
+    state: link
+  become: false
+  tags: i3

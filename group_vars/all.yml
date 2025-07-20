@@ -1,0 +1,7 @@
+---
+# URL do Twojego repo z i3-config
+i3wm_config_repo: "https://github.com/8tm/i3wm-configuration"
+
+# Gałąź czy tag, który ma zostać pobrany
+i3wm_config_version: "master"
+
