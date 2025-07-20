@@ -1,38 +1,53 @@
 ---
-- name: Ensure basic tools are installed
-  apt:
-    name: "{{ item }}"
-    state: present
-    update_cache: yes
-  loop:
-    - vim
-    - htop
-    - curl
-    - wget
-    - snapd
-    - gedit
-    - terminator
-    - smplayer
-    - arduino
-    - fritzing
-    - caja
-    - qbittorrent
-    - gimp
-    - freecad
-    - sqlitebrowser
-    - system-config-printer
-    - printer-driver-postscript-hp
-    - hplip
-    - nvidia-driver-535
-    - flatpak
-    - gnome-software-plugin-flatpak
-    - appimagelauncher
 
-- name: Ensure Unattended Upgrades is enabled
-  apt:
-    name: unattended-upgrades
+- name: Enable Ubuntu universe repository
+  apt_repository:
+    repo: "deb http://archive.ubuntu.com/ubuntu {{ ansible_distribution_release }} universe"
+    filename: "ubuntu-{{ ansible_distribution_release }}-universe"
     state: present
-    update_cache: yes
 
-- name: Enable Unattended Upgrades
+- name: Add graphics‑drivers PPA (nVidia)
+  apt_repository:
+    repo: ppa:graphics-drivers/ppa
+    state: present
+
+- name: Add AppImageLauncher PPA
+  apt_repository:
+    repo: ppa:appimagelauncher-team/stable
+    state: present
+
+- name: Update APT cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install all base packages
+  apt:
+    name:
+      - vim
+      - htop
+      - curl
+      - wget
+      - snapd
+      - gedit
+      - terminator
+      - smplayer
+      - arduino
+      - fritzing
+      - caja
+      - qbittorrent
+      - gimp
+      - freecad
+      - sqlitebrowser
+      - system-config-printer
+      - printer-driver-postscript-hp
+      - hplip
+      - flatpak
+      - gnome-software-plugin-flatpak
+      - nvidia-driver-535
+      - appimagelauncher
+      - unattended-upgrades
+    state: present
+
+- name: Enable Unattended Upgrades non‑interactively
   command: dpkg-reconfigure -f noninteractive unattended-upgrades
