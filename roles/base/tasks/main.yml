@@ -1,35 +1,43 @@
 ---
-
-- name: Install prerequisites for adding PPAs
+- name: Zainstaluj narzędzia do zarządzania PPA
   apt:
     name:
       - software-properties-common
       - dirmngr
+      - apt-transport-https
     state: present
     update_cache: yes
 
-- name: Add nVidia graphics‑drivers PPA GPG key
-  ansible.builtin.apt_key:
-    keyserver: keyserver.ubuntu.com
-    id: 2388FF3BE10A76F638F80723FCAE110B1118213C
-    state: present
-
-- name: Add graphics‑drivers PPA (nVidia)
+- name: Włącz repozytorium universe
   apt_repository:
-    repo: ppa:graphics-drivers/ppa
+    repo: "deb http://archive.ubuntu.com/ubuntu {{ ansible_distribution_release }} universe"
+    filename: "ubuntu-universe"
     state: present
 
-- name: Add AppImageLauncher PPA
-  apt_repository:
-    repo: ppa:appimagelauncher-team/stable
-    state: present
+- name: Sprawdź, czy PPA sterowników nVidia jest już dodane
+  stat:
+    path: "/etc/apt/sources.list.d/graphics-drivers-ppa-{{ ansible_distribution_release }}.list"
+  register: _stat_nvidia_ppa
 
-- name: Update APT cache
+- name: Dodaj PPA graphics‑drivers/ppa (nVidia)
+  command: add-apt-repository -y ppa:graphics-drivers/ppa
+  when: not _stat_nvidia_ppa.stat.exists
+
+- name: Sprawdź, czy działamy na Ubuntu 25.04 ("Plucky Puffin")
+  set_fact:
+    is_plucky: "{{ ansible_distribution_version == '25.04' }}"
+
+- name: Dodaj PPA AppImageLauncher (tylko jeśli nie Plucky)
+  command: add-apt-repository -y ppa:appimagelauncher-team/stable
+  when:
+    - not is_plucky
+
+- name: Odśwież APT cache
   apt:
     update_cache: yes
     cache_valid_time: 3600
 
-- name: Install all base packages
+- name: Instalacja wszystkich pakietów bazowych + nVidia
   apt:
     name:
       - vim
@@ -53,9 +61,30 @@
       - flatpak
       - gnome-software-plugin-flatpak
       - nvidia-driver-535
-      - appimagelauncher
       - unattended-upgrades
     state: present
 
-- name: Enable Unattended Upgrades non‑interactively
+- name: Jeśli Ubuntu 25.04 – pobierz AppImageLauncher .deb z GitHub
+  get_url:
+    url: >-
+      https://github.com/TheAssassin/AppImageLauncher/releases/
+      download/v2.2.0-travis20200615/
+      appimagelauncher_2.2.0-travis20200615.bionic_amd64.deb
+    dest: /tmp/appimagelauncher.deb
+    mode: '0644'
+  when: is_plucky
+
+- name: Jeśli Ubuntu 25.04 – zainstaluj AppImageLauncher z .deb
+  apt:
+    deb: /tmp/appimagelauncher.deb
+    state: present
+  when: is_plucky
+
+- name: Jeśli nie Ubuntu 25.04 – zainstaluj AppImageLauncher z PPA
+  apt:
+    name: appimagelauncher
+    state: present
+  when: not is_plucky
+
+- name: Włącz Unattended Upgrades w trybie non‑interactive
   command: dpkg-reconfigure -f noninteractive unattended-upgrades
