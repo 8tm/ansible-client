@@ -1,9 +1,17 @@
 ---
 
-- name: Enable Ubuntu universe repository
-  apt_repository:
-    repo: "deb http://archive.ubuntu.com/ubuntu {{ ansible_distribution_release }} universe"
-    filename: "ubuntu-{{ ansible_distribution_release }}-universe"
+- name: Install prerequisites for adding PPAs
+  apt:
+    name:
+      - software-properties-common
+      - dirmngr
+    state: present
+    update_cache: yes
+
+- name: Add nVidia graphics‑drivers PPA GPG key
+  ansible.builtin.apt_key:
+    keyserver: keyserver.ubuntu.com
+    id: 2388FF3BE10A76F638F80723FCAE110B1118213C
     state: present
 
 - name: Add graphics‑drivers PPA (nVidia)
