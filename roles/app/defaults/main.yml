@@ -1,0 +1,2 @@
+app_repo_url: "https://github.com/8tm/ansible-client.git"
+app_dest: /opt/ansible-client

@@ -3,6 +3,7 @@
   apt:
     name: "{{ item }}"
     state: present
+    update_cache: yes
   loop:
     - nginx
     - python3-pip
@@ -10,8 +11,9 @@
 
 - name: Clone the application repository
   git:
-    repo: 'https://github.com/8tm/ansible-client.git'
-    dest: /opt/ansible-client
+    repo: "{{ app_repo_url }}"
+    dest: "{{ app_dest }}"
+    version: "{{ app_repo_version | default('master') }}"
 
 - name: Configure Nginx for the application
   template:

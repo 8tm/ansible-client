@@ -3,16 +3,36 @@
   apt:
     name: "{{ item }}"
     state: present
+    update_cache: yes
   loop:
     - vim
     - htop
     - curl
     - wget
+    - snapd
+    - gedit
+    - terminator
+    - smplayer
+    - arduino
+    - fritzing
+    - caja
+    - qbittorrent
+    - gimp
+    - freecad
+    - sqlitebrowser
+    - system-config-printer
+    - printer-driver-postscript-hp
+    - hplip
+    - nvidia-driver-535
+    - flatpak
+    - gnome-software-plugin-flatpak
+    - appimagelauncher
 
 - name: Ensure Unattended Upgrades is enabled
   apt:
     name: unattended-upgrades
     state: present
+    update_cache: yes
 
 - name: Enable Unattended Upgrades
   command: dpkg-reconfigure -f noninteractive unattended-upgrades
