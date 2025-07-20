@@ -1,2 +1,9 @@
+---
+app_name: "ansible-client"
 app_repo_url: "https://github.com/8tm/ansible-client.git"
-app_dest: /opt/ansible-client
+app_repo_version: "master"
+app_dest: "/opt/ansible-client"
+app_venv_path: "{{ app_dest }}/venv"
+
+
+
