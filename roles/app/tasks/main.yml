@@ -6,29 +6,66 @@
     update_cache: yes
   loop:
     - nginx
+    - python3-venv
     - python3-pip
     - git
+
+- name: Create virtualenv directory
+  ansible.builtin.file:
+    path: "{{ app_venv_path }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Create Python virtual environment
+  ansible.builtin.command:
+    cmd: python3 -m venv "{{ app_venv_path }}"
+  args:
+    creates: "{{ app_venv_path }}/bin/activate"
 
 - name: Clone the application repository
   git:
     repo: "{{ app_repo_url }}"
     dest: "{{ app_dest }}"
     version: "{{ app_repo_version | default('master') }}"
+    force: yes
+    update: yes
 
-- name: Configure Nginx for the application
-  template:
+- name: Install Python requirements into venv
+  ansible.builtin.pip:
+    requirements: "{{ app_dest }}/requirements.txt"
+    virtualenv: "{{ app_venv_path }}"
+    virtualenv_python: python3
+
+- name: Render Nginx site configuration
+  ansible.builtin.template:
     src: nginx.conf.j2
-    dest: /etc/nginx/sites-available/default
+    dest: "/etc/nginx/sites-available/{{ app_name }}"
+    owner: root
+    group: root
+    mode: '0644'
   notify: Restart Nginx
 
-- name: Ensure Nginx is running
-  service:
+- name: Enable Nginx site
+  ansible.builtin.file:
+    src: "/etc/nginx/sites-available/{{ app_name }}"
+    dest: "/etc/nginx/sites-enabled/{{ app_name }}"
+    state: link
+
+- name: Disable default Nginx site
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: Ensure Nginx is running and enabled
+  ansible.builtin.service:
     name: nginx
     state: started
     enabled: yes
 
 # Instalacja i3WM:
-- name: Instalacja i3wm i narzędzi
+- name: Ensure i3wm and utilities are installed
   ansible.builtin.apt:
     name:
       - i3
@@ -40,31 +77,44 @@
     update_cache: no
   tags: i3
 
-- name: Utwórz katalog konfiguracji i3
+- name: Ensure ~/.config/i3 exists
   ansible.builtin.file:
-    path: "{{ lookup('env','HOME') }}/.config/i3"
+    path: "{{ ansible_env.HOME }}/.config/i3"
     state: directory
     mode: '0755'
-    owner: "{{ lookup('env','USER') }}"
-    group: "{{ lookup('env','USER') }}"
-  # overrides playbookowe become: true, aby działać jako normalny użytkownik
-  become: false
+    owner: "{{ ansible_env.USER }}"
+    group: "{{ ansible_env.USER }}"
   tags: i3
 
-- name: Sklonuj i3-config z GitHub
+- name: Clone i3 configuration from GitHub
   ansible.builtin.git:
     repo: "{{ i3wm_config_repo }}"
-    dest: "{{ lookup('env','HOME') }}/.config/i3"
+    dest: "{{ ansible_env.HOME }}/.config/i3"
     version: "{{ i3wm_config_version }}"
     force: yes
     update: yes
-  become: false
   tags: i3
 
-- name: (opcjonalnie) Symlink do pliku config w ~/.i3
+- name: Check if i3 config file exists
+  ansible.builtin.stat:
+    path: "{{ ansible_env.HOME }}/.config/i3/config"
+  register: i3config
+  tags: i3
+
+- name: Ensure ~/.i3 directory exists
   ansible.builtin.file:
-    src: "{{ lookup('env','HOME') }}/.config/i3/config"
-    dest: "{{ lookup('env','HOME') }}/.i3/config"
+    path: "{{ ansible_env.HOME }}/.i3"
+    state: directory
+    mode: '0755'
+    owner: "{{ ansible_env.USER }}"
+    group: "{{ ansible_env.USER }}"
+  tags: i3
+
+- name: Symlink i3 config to ~/.i3/config
+  ansible.builtin.file:
+    src: "{{ ansible_env.HOME }}/.config/i3/config"
+    dest: "{{ ansible_env.HOME }}/.i3/config"
     state: link
-  become: false
+    force: yes
+  when: i3config.stat.exists
   tags: i3
