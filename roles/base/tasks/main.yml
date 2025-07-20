@@ -23,7 +23,7 @@
     cache_valid_time: 3600
 
 - name: Automatyczna instalacja rekomendowanego sterownika NVIDIA
-  ansible.builtin.command: ubuntu-drivers install --yes
+  ansible.builtin.command: ubuntu-drivers autoinstall
   become: yes
 
 - name: Odśwież cache APT
